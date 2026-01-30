@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { ArrowLeft, Github, FileText, CheckCircle2, Circle, Clock } from "lucide-react"
+import { ArrowLeft, Github, FileText, CheckCircle2, Circle, Clock, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { Project } from "@/components/ProjectCard/ProjectCard"
+import { TaskDialog } from "@/components/Tasks/TaskDialog"
 
 const statusConfig = {
   active: { label: "Active", color: "bg-green-500" },
@@ -19,9 +20,14 @@ const statusConfig = {
 
 interface Task {
   id: string
+  projectId: string
   title: string
+  description?: string
   status: 'todo' | 'inprogress' | 'done'
+  priority?: 'low' | 'medium' | 'high'
+  dueDate?: string
   createdAt: string
+  updatedAt: string
 }
 
 export default function ProjectPage() {
@@ -30,32 +36,74 @@ export default function ProjectPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    // Fetch project data
+  const loadProject = () => {
     fetch('/api/projects')
       .then(res => res.json())
       .then(data => {
         const found = data.projects?.find((p: Project) => p.id === params.id)
         setProject(found || null)
-        
-        // Mock tasks for now
-        if (found) {
-          const mockTasks: Task[] = [
-            { id: '1', title: 'Set up project structure', status: 'done', createdAt: '2026-01-28' },
-            { id: '2', title: 'Implement core features', status: 'inprogress', createdAt: '2026-01-29' },
-            { id: '3', title: 'Add tests', status: 'todo', createdAt: '2026-01-30' },
-            { id: '4', title: 'Deploy to production', status: 'todo', createdAt: '2026-01-30' },
-          ]
-          setTasks(mockTasks)
-        }
-        
+      })
+      .catch(err => console.error('Failed to load project:', err))
+  }
+
+  const loadTasks = () => {
+    if (!params.id) return
+    
+    fetch(`/api/tasks?projectId=${params.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setTasks(data.tasks || [])
         setLoading(false)
       })
       .catch(err => {
-        console.error('Failed to load project:', err)
+        console.error('Failed to load tasks:', err)
         setLoading(false)
       })
+  }
+
+  useEffect(() => {
+    loadProject()
+    loadTasks()
   }, [params.id])
+
+  const handleTaskCreated = () => {
+    loadTasks()
+    loadProject()
+  }
+
+  const handleTaskStatusChange = async (taskId: string, newStatus: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+
+      if (response.ok) {
+        loadTasks()
+        loadProject()
+      }
+    } catch (error) {
+      console.error('Failed to update task:', error)
+    }
+  }
+
+  const handleDeleteTask = async (taskId: string) => {
+    if (!confirm('Are you sure you want to delete this task?')) return
+
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        loadTasks()
+        loadProject()
+      }
+    } catch (error) {
+      console.error('Failed to delete task:', error)
+    }
+  }
 
   if (loading) {
     return (
@@ -88,17 +136,26 @@ export default function ProjectPage() {
   const inprogressTasks = tasks.filter(t => t.status === 'inprogress')
   const doneTasks = tasks.filter(t => t.status === 'done')
 
+  const priorityColors = {
+    low: 'text-gray-500',
+    medium: 'text-yellow-500',
+    high: 'text-red-500',
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-6 py-4">
-          <Link href="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href="/">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </Link>
+            <TaskDialog projectId={project.id} onTaskCreated={handleTaskCreated} />
+          </div>
         </div>
       </header>
 
@@ -117,7 +174,7 @@ export default function ProjectPage() {
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
             <Card>
               <CardContent className="pt-6">
                 <div className="text-3xl font-bold">{project.progress}%</div>
@@ -126,7 +183,7 @@ export default function ProjectPage() {
             </Card>
             <Card>
               <CardContent className="pt-6">
-                <div className="text-3xl font-bold">{project.tasksCompleted}/{project.tasksTotal}</div>
+                <div className="text-3xl font-bold">{doneTasks.length}/{tasks.length}</div>
                 <p className="text-sm text-muted-foreground">Tasks</p>
               </CardContent>
             </Card>
@@ -146,7 +203,7 @@ export default function ProjectPage() {
 
           <div className="mb-8">
             <h3 className="text-sm font-medium mb-2">Overall Progress</h3>
-            <Progress value={project.progress} className="h-3" />
+            <Progress value={(doneTasks.length / Math.max(tasks.length, 1)) * 100} className="h-3" />
           </div>
 
           {project.githubUrl && (
@@ -162,7 +219,8 @@ export default function ProjectPage() {
         </div>
 
         {/* Tasks Kanban */}
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* TODO Column */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -172,17 +230,53 @@ export default function ProjectPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               {todoTasks.map(task => (
-                <div key={task.id} className="p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer">
-                  <p className="text-sm font-medium">{task.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{task.createdAt}</p>
+                <div 
+                  key={task.id} 
+                  className="group p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer relative"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium flex-1">{task.title}</p>
+                    {task.priority && (
+                      <span className={`text-xs ${priorityColors[task.priority]}`}>
+                        {task.priority}
+                      </span>
+                    )}
+                  </div>
+                  {task.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
+                  )}
+                  {task.dueDate && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Due: {new Date(task.dueDate).toLocaleDateString()}
+                    </p>
+                  )}
+                  <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="h-6 text-xs"
+                      onClick={() => handleTaskStatusChange(task.id, 'inprogress')}
+                    >
+                      Start
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={() => handleDeleteTask(task.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
               {todoTasks.length === 0 && (
-                <p className="text-sm text-muted-foreground">No tasks</p>
+                <p className="text-sm text-muted-foreground text-center py-4">No tasks</p>
               )}
             </CardContent>
           </Card>
 
+          {/* IN PROGRESS Column */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -192,17 +286,61 @@ export default function ProjectPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               {inprogressTasks.map(task => (
-                <div key={task.id} className="p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer border-yellow-500/50">
-                  <p className="text-sm font-medium">{task.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{task.createdAt}</p>
+                <div 
+                  key={task.id} 
+                  className="group p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer border-yellow-500/50 relative"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium flex-1">{task.title}</p>
+                    {task.priority && (
+                      <span className={`text-xs ${priorityColors[task.priority]}`}>
+                        {task.priority}
+                      </span>
+                    )}
+                  </div>
+                  {task.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{task.description}</p>
+                  )}
+                  {task.dueDate && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Due: {new Date(task.dueDate).toLocaleDateString()}
+                    </p>
+                  )}
+                  <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="h-6 text-xs"
+                      onClick={() => handleTaskStatusChange(task.id, 'done')}
+                    >
+                      Complete
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={() => handleTaskStatusChange(task.id, 'todo')}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={() => handleDeleteTask(task.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
               {inprogressTasks.length === 0 && (
-                <p className="text-sm text-muted-foreground">No tasks</p>
+                <p className="text-sm text-muted-foreground text-center py-4">No tasks</p>
               )}
             </CardContent>
           </Card>
 
+          {/* DONE Column */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -212,13 +350,43 @@ export default function ProjectPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               {doneTasks.map(task => (
-                <div key={task.id} className="p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer border-green-500/50 opacity-75">
-                  <p className="text-sm font-medium line-through">{task.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{task.createdAt}</p>
+                <div 
+                  key={task.id} 
+                  className="group p-3 rounded-lg border bg-card hover:bg-accent cursor-pointer border-green-500/50 opacity-75 relative"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-medium line-through flex-1">{task.title}</p>
+                    {task.priority && (
+                      <span className={`text-xs ${priorityColors[task.priority]}`}>
+                        {task.priority}
+                      </span>
+                    )}
+                  </div>
+                  {task.description && (
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2 line-through">{task.description}</p>
+                  )}
+                  <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={() => handleTaskStatusChange(task.id, 'todo')}
+                    >
+                      Reopen
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="ghost"
+                      className="h-6 text-xs"
+                      onClick={() => handleDeleteTask(task.id)}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
               {doneTasks.length === 0 && (
-                <p className="text-sm text-muted-foreground">No tasks</p>
+                <p className="text-sm text-muted-foreground text-center py-4">No completed tasks</p>
               )}
             </CardContent>
           </Card>

@@ -6,6 +6,9 @@ import { GoalsTracker } from "@/components/GoalsTracker/GoalsTracker"
 import { SearchFilter } from "@/components/Dashboard/SearchFilter"
 import { StatsOverview } from "@/components/Dashboard/StatsOverview"
 import { UpcomingDeadlines } from "@/components/Calendar/UpcomingDeadlines"
+import { Button } from "@/components/ui/button"
+import { BarChart3 } from "lucide-react"
+import Link from "next/link"
 import { useEffect, useState } from "react"
 
 export default function Home() {
@@ -58,25 +61,33 @@ export default function Home() {
                 })}
               </p>
             </div>
-            <div className="flex gap-4 sm:gap-6 text-sm">
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-green-600">
-                  {loading ? '...' : projects.filter(p => p.status === 'active').length}
+            <div className="flex items-center gap-4">
+              <div className="flex gap-4 sm:gap-6 text-sm">
+                <div className="text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">
+                    {loading ? '...' : projects.filter(p => p.status === 'active').length}
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Active</div>
                 </div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Active</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-yellow-600">
-                  {loading ? '...' : projects.filter(p => p.status === 'pending').length}
+                <div className="text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-yellow-600">
+                    {loading ? '...' : projects.filter(p => p.status === 'pending').length}
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Pending</div>
                 </div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Pending</div>
-              </div>
-              <div className="text-center">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                  {loading ? '...' : projects.filter(p => p.status === 'done').length}
+                <div className="text-center">
+                  <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                    {loading ? '...' : projects.filter(p => p.status === 'done').length}
+                  </div>
+                  <div className="text-xs sm:text-sm text-muted-foreground">Done</div>
                 </div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Done</div>
               </div>
+              <Link href="/analytics">
+                <Button variant="outline" size="sm">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  Analytics
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
