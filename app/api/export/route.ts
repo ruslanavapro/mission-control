@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         task.updatedAt,
       ])
 
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+      const csv = [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\n')
 
       return new NextResponse(csv, {
         headers: {
