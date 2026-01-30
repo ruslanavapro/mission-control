@@ -54,10 +54,10 @@ export async function getUpcomingEvents(maxResults: number = 10): Promise<Calend
     return events.map(event => ({
       id: event.id || '',
       summary: event.summary || 'Untitled Event',
-      description: event.description,
+      description: event.description ?? undefined,
       start: event.start?.dateTime || event.start?.date || '',
       end: event.end?.dateTime || event.end?.date || '',
-      location: event.location,
+      location: event.location ?? undefined,
       htmlLink: event.htmlLink || '',
     }))
   } catch (error) {
@@ -90,10 +90,10 @@ export async function getTodayEvents(): Promise<CalendarEvent[]> {
     return events.map(event => ({
       id: event.id || '',
       summary: event.summary || 'Untitled Event',
-      description: event.description,
+      description: event.description ?? undefined,
       start: event.start?.dateTime || event.start?.date || '',
       end: event.end?.dateTime || event.end?.date || '',
-      location: event.location,
+      location: event.location ?? undefined,
       htmlLink: event.htmlLink || '',
     }))
   } catch (error) {

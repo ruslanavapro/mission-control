@@ -95,7 +95,7 @@ export function GoalsTracker() {
             <strong>Balanced approach:</strong> All goals matter, #1 slightly more important (20% vs 16%).
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            Focus: Build infrastructure, find opportunities, make plans. Quality > quick wins.
+            Focus: Build infrastructure, find opportunities, make plans. Quality &gt; quick wins.
           </p>
         </div>
       </CardContent>
