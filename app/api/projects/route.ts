@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getGithubRepos } from '@/lib/api/github'
+import { getGithubRepos, getRepoCommits } from '@/lib/api/github'
 import { getDocumentsByProject } from '@/lib/api/avabase'
 import { Project } from '@/components/ProjectCard/ProjectCard'
 
@@ -60,15 +60,18 @@ export async function GET() {
         .map(async (repo) => {
           const mapping = projectMapping[repo.name]
           const documents = await getDocumentsByProject(mapping.name || repo.name)
+          const commits = await getRepoCommits(repo.name, 20)
           
           // Calculate progress based on repo activity
-          const progress = calculateProgress(10, repo.open_issues_count) // Simplified
+          const progress = calculateProgress(commits.length, repo.open_issues_count)
           
-          // Parse last activity
-          const lastUpdate = new Date(repo.updated_at)
+          // Parse last activity (prefer latest commit date)
+          const lastUpdate = commits[0]?.commit?.author?.date
+            ? new Date(commits[0].commit.author.date)
+            : new Date(repo.updated_at)
           const now = new Date()
           const hoursAgo = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60 * 60))
-          const lastActivity = hoursAgo < 24 
+          const lastActivity = hoursAgo < 24
             ? `${hoursAgo} hours ago`
             : `${Math.floor(hoursAgo / 24)} days ago`
           

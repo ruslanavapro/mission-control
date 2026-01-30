@@ -1,5 +1,5 @@
 // Clawdbot Sessions API client
-const CLAWDBOT_API_BASE = process.env.CLAWDBOT_API_URL || 'http://localhost:18800'
+const CLAWDBOT_API_BASE = process.env.CLAWDBOT_API_URL || 'http://localhost:18789'
 
 export interface ClawdbotSession {
   key: string
