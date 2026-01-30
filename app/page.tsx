@@ -5,7 +5,7 @@ import { ConversationFeed } from "@/components/ConversationFeed/ConversationFeed
 import { GoalsTracker } from "@/components/GoalsTracker/GoalsTracker"
 import { SearchFilter } from "@/components/Dashboard/SearchFilter"
 import { StatsOverview } from "@/components/Dashboard/StatsOverview"
-import { Card } from "@/components/ui/card"
+import { UpcomingDeadlines } from "@/components/Calendar/UpcomingDeadlines"
 import { useEffect, useState } from "react"
 
 export default function Home() {
@@ -143,14 +143,8 @@ export default function Home() {
               {/* Right sidebar */}
               <div className="space-y-6">
                 <GoalsTracker />
+                <UpcomingDeadlines />
                 <ConversationFeed />
-                
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Upcoming Deadlines</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Google Calendar integration coming soon...
-                  </p>
-                </Card>
               </div>
             </div>
           </>
