@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { ArrowLeft, TrendingUp, Calendar, Clock, Target } from "lucide-react"
 import Link from "next/link"
 import { ActivityHeatmap } from "@/components/Analytics/ActivityHeatmap"
+import { ProjectProgressChart } from "@/components/Analytics/ProjectProgressChart"
+import { TaskCompletionChart } from "@/components/Analytics/TaskCompletionChart"
 import { useEffect, useState } from "react"
 
 export default function AnalyticsPage() {
@@ -116,33 +118,8 @@ export default function AnalyticsPage() {
 
         {/* Additional Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Progress Distribution</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Chart showing distribution of project progress percentages
-              </p>
-              <p className="text-xs text-muted-foreground mt-4">
-                Coming soon: Bar chart with progress ranges (0-25%, 26-50%, 51-75%, 76-100%)
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Task Completion Rate</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Weekly task completion trends
-              </p>
-              <p className="text-xs text-muted-foreground mt-4">
-                Coming soon: Line chart showing tasks completed per week over the last 3 months
-              </p>
-            </CardContent>
-          </Card>
+          <ProjectProgressChart />
+          <TaskCompletionChart />
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { StatsOverview } from "@/components/Dashboard/StatsOverview"
 import { UpcomingDeadlines } from "@/components/Calendar/UpcomingDeadlines"
 import { QuickNotes } from "@/components/QuickNotes/QuickNotes"
 import { ExportButton } from "@/components/Export/ExportButton"
+import { ThemeToggle } from "@/components/ThemeToggle/ThemeToggle"
 import { Button } from "@/components/ui/button"
 import { BarChart3, Settings } from "lucide-react"
 import Link from "next/link"
@@ -88,6 +89,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex gap-2">
+                <ThemeToggle />
                 <ExportButton projects={projects} />
                 <Link href="/analytics">
                   <Button variant="outline" size="sm">

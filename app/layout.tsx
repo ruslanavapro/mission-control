@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { CommandPaletteWrapper } from "@/components/CommandPalette/CommandPaletteWrapper";
+import { Toaster } from "@/components/Toast/Toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className={inter.className}>
         {children}
         <CommandPaletteWrapper />
+        <Toaster />
       </body>
     </html>
   );
