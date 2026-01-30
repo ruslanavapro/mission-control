@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - AVABASE_API_URL=${AVABASE_API_URL:-https://ava-2-brain-production.up.railway.app}
+      - CLAWDBOT_API_URL=${CLAWDBOT_API_URL:-http://host.docker.internal:18800}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GOOGLE_CLIENT_EMAIL=${GOOGLE_CLIENT_EMAIL:-}
+      - GOOGLE_PRIVATE_KEY=${GOOGLE_PRIVATE_KEY:-}
+      - GOOGLE_CALENDAR_ID=${GOOGLE_CALENDAR_ID:-primary}
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Development service (optional)
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - AVABASE_API_URL=${AVABASE_API_URL:-https://ava-2-brain-production.up.railway.app}
+      - CLAWDBOT_API_URL=${CLAWDBOT_API_URL:-http://host.docker.internal:18800}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    profiles:
+      - development
