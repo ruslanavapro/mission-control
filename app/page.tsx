@@ -5,6 +5,7 @@ import { ConversationFeed } from "@/components/ConversationFeed/ConversationFeed
 import { GoalsTracker } from "@/components/GoalsTracker/GoalsTracker"
 import { SearchFilter } from "@/components/Dashboard/SearchFilter"
 import { StatsOverview } from "@/components/Dashboard/StatsOverview"
+import { TaskSearch } from "@/components/Dashboard/TaskSearch"
 import { UpcomingDeadlines } from "@/components/Calendar/UpcomingDeadlines"
 import { QuickNotes } from "@/components/QuickNotes/QuickNotes"
 import { ExportButton } from "@/components/Export/ExportButton"
@@ -52,6 +53,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background">
+      <AutoRefresh intervalMs={30000} />
       {/* Header */}
       <header className="border-b">
         <div className="container mx-auto px-4 sm:px-6 py-4">
@@ -168,6 +170,7 @@ export default function Home() {
 
               {/* Right sidebar */}
               <div className="space-y-6">
+                <TaskSearch />
                 <GoalsTracker />
                 <UpcomingDeadlines />
                 <QuickNotes />

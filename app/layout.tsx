@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { CommandPaletteWrapper } from "@/components/CommandPalette/CommandPaletteWrapper";
 import { Toaster } from "@/components/Toast/Toaster";
+import { MobileNav } from "@/components/Navigation/MobileNav";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,7 +37,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={inter.className}>
-        {children}
+        <div className="pb-16 lg:pb-0">
+          {children}
+        </div>
+        <MobileNav />
         <CommandPaletteWrapper />
         <Toaster />
       </body>
