@@ -1,0 +1,137 @@
+[
+  {
+    "id": "web-app",
+    "name": "Web Application",
+    "description": "Standard web app project template",
+    "tasks": [
+      {
+        "title": "Set up project structure",
+        "description": "Initialize repo, configure tooling",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Design database schema",
+        "description": "Plan data models and relationships",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Create UI mockups",
+        "description": "Design key screens and flows",
+        "status": "todo",
+        "priority": "medium"
+      },
+      {
+        "title": "Implement authentication",
+        "description": "User login and registration",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Build core features",
+        "description": "Implement main functionality",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Write tests",
+        "description": "Unit and integration tests",
+        "status": "todo",
+        "priority": "medium"
+      },
+      {
+        "title": "Deploy to production",
+        "description": "Set up CI/CD and deploy",
+        "status": "todo",
+        "priority": "medium"
+      }
+    ]
+  },
+  {
+    "id": "content-creation",
+    "name": "Content Creation",
+    "description": "Template for content projects (blog, video, course)",
+    "tasks": [
+      {
+        "title": "Research topic",
+        "description": "Gather information and references",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Create outline",
+        "description": "Structure the content",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Draft content",
+        "description": "Write first version",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Edit and refine",
+        "description": "Review and improve",
+        "status": "todo",
+        "priority": "medium"
+      },
+      {
+        "title": "Create visuals",
+        "description": "Images, diagrams, or video",
+        "status": "todo",
+        "priority": "medium"
+      },
+      {
+        "title": "Publish",
+        "description": "Upload and share",
+        "status": "todo",
+        "priority": "low"
+      }
+    ]
+  },
+  {
+    "id": "research",
+    "name": "Research Project",
+    "description": "Template for research and analysis",
+    "tasks": [
+      {
+        "title": "Define research question",
+        "description": "What are we trying to find out?",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Literature review",
+        "description": "Review existing research",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Collect data",
+        "description": "Gather information",
+        "status": "todo",
+        "priority": "high"
+      },
+      {
+        "title": "Analyze findings",
+        "description": "Process and interpret data",
+        "status": "todo",
+        "priority": "medium"
+      },
+      {
+        "title": "Write report",
+        "description": "Document conclusions",
+        "status": "todo",
+        "priority": "medium"
+      },
+      {
+        "title": "Present findings",
+        "description": "Share results",
+        "status": "todo",
+        "priority": "low"
+      }
+    ]
+  }
+]
