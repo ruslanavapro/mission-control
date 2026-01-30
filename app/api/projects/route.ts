@@ -82,6 +82,9 @@ export async function GET() {
             status: mapping.status || 'active',
             progress,
             githubUrl: repo.html_url,
+            github: {
+              commits,
+            },
             documentsCount: documents.length,
             tasksCompleted: Math.floor(progress / 10), // Estimate
             tasksTotal: Math.floor(progress / 10) + repo.open_issues_count,

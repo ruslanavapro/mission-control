@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Calendar as CalendarIcon, Clock, MapPin, ExternalLink } from "lucide-react"
 import { useEffect, useState } from "react"
 import { format, formatDistanceToNow, isPast, isToday, isTomorrow } from "date-fns"
@@ -68,8 +69,10 @@ export function UpcomingDeadlines() {
             Upcoming Deadlines
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+        <CardContent className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-10" />
+          ))}
         </CardContent>
       </Card>
     )

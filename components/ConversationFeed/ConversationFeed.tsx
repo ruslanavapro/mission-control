@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Skeleton } from "@/components/ui/skeleton"
 import { MessageSquare, Calendar } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -47,8 +48,10 @@ export function ConversationFeed() {
             Recent Conversations
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+        <CardContent className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-12" />
+          ))}
         </CardContent>
       </Card>
     )

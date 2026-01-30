@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ArrowLeft, Github, FileText, CheckCircle2, Circle, Clock, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { Project } from "@/components/ProjectCard/ProjectCard"
@@ -108,8 +109,15 @@ export default function ProjectPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-6 py-8">
-          <p className="text-muted-foreground">Loading project...</p>
+        <div className="container mx-auto px-6 py-8 space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-5 w-2/3" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <Skeleton className="h-64" />
         </div>
       </div>
     )

@@ -1,6 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 import { GitCommit } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -64,7 +65,11 @@ export function RecentCommits() {
       </CardHeader>
       <CardContent className="space-y-3">
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-10" />
+            ))}
+          </div>
         ) : commits.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-2">No commits yet</p>
         ) : (

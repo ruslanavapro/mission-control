@@ -19,7 +19,13 @@ interface Task {
 export function TaskSearch() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [query, setQuery] = useState('')
+  const [debouncedQuery, setDebouncedQuery] = useState('')
   const [projects, setProjects] = useState<any[]>([])
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 250)
+    return () => clearTimeout(t)
+  }, [query])
 
   useEffect(() => {
     Promise.all([
@@ -31,11 +37,11 @@ export function TaskSearch() {
     }).catch(() => {})
   }, [])
 
-  const filtered = query === '' 
+  const filtered = debouncedQuery === '' 
     ? [] 
     : tasks.filter(t => 
-        t.title.toLowerCase().includes(query.toLowerCase()) ||
-        (t.description || '').toLowerCase().includes(query.toLowerCase())
+        t.title.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+        (t.description || '').toLowerCase().includes(debouncedQuery.toLowerCase())
       ).slice(0, 5)
 
   const getProjectName = (projectId: string) => {
@@ -63,7 +69,7 @@ export function TaskSearch() {
           onChange={e => setQuery(e.target.value)}
           className="h-9"
         />
-        {query && filtered.length > 0 && (
+        {debouncedQuery && filtered.length > 0 && (
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {filtered.map(task => (
               <Link key={task.id} href={`/projects/${task.projectId}`}>
@@ -81,7 +87,7 @@ export function TaskSearch() {
             ))}
           </div>
         )}
-        {query && filtered.length === 0 && (
+        {debouncedQuery && filtered.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-2">No tasks found</p>
         )}
       </CardContent>

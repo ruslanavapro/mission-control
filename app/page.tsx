@@ -12,9 +12,11 @@ import { QuickNotes } from "@/components/QuickNotes/QuickNotes"
 import { ExportButton } from "@/components/Export/ExportButton"
 import { ThemeToggle } from "@/components/ThemeToggle/ThemeToggle"
 import { Button } from "@/components/ui/button"
-import { BarChart3, Settings } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { BarChart3, Settings, Bell } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { useKeyboardShortcuts } from "@/components/KeyboardShortcuts/useKeyboardShortcuts"
 
 export default function Home() {
@@ -92,6 +94,14 @@ export default function Home() {
                 </div>
               </div>
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => toast.message('No new notifications')}
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-4 h-4" />
+                </Button>
                 <ThemeToggle />
                 <ExportButton projects={projects} />
                 <Link href="/analytics">
@@ -114,8 +124,27 @@ export default function Home() {
       {/* Main Dashboard */}
       <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {loading ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading projects...</p>
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton key={i} className="h-24" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
+                <Skeleton className="h-24" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-40" />
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-32" />
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <>

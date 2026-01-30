@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Search, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 interface SearchFilterProps {
   onSearchChange: (query: string) => void
@@ -24,8 +24,12 @@ export function SearchFilter({ onSearchChange, onFilterChange, activeFilter }: S
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value)
-    onSearchChange(value)
   }
+
+  useEffect(() => {
+    const t = setTimeout(() => onSearchChange(searchQuery), 250)
+    return () => clearTimeout(t)
+  }, [searchQuery, onSearchChange])
 
   const handleFilterClick = (filter: string) => {
     const newFilter = activeFilter === filter ? null : filter
