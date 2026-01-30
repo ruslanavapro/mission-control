@@ -6,12 +6,16 @@ import { GoalsTracker } from "@/components/GoalsTracker/GoalsTracker"
 import { SearchFilter } from "@/components/Dashboard/SearchFilter"
 import { StatsOverview } from "@/components/Dashboard/StatsOverview"
 import { UpcomingDeadlines } from "@/components/Calendar/UpcomingDeadlines"
+import { ExportButton } from "@/components/Export/ExportButton"
 import { Button } from "@/components/ui/button"
 import { BarChart3 } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { useKeyboardShortcuts } from "@/components/KeyboardShortcuts/useKeyboardShortcuts"
 
 export default function Home() {
+  useKeyboardShortcuts()
+  
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -82,12 +86,15 @@ export default function Home() {
                   <div className="text-xs sm:text-sm text-muted-foreground">Done</div>
                 </div>
               </div>
-              <Link href="/analytics">
-                <Button variant="outline" size="sm">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Analytics
-                </Button>
-              </Link>
+              <div className="flex gap-2">
+                <ExportButton projects={projects} />
+                <Link href="/analytics">
+                  <Button variant="outline" size="sm">
+                    <BarChart3 className="w-4 h-4 mr-2" />
+                    Analytics
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>
