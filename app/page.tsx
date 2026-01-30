@@ -6,9 +6,10 @@ import { GoalsTracker } from "@/components/GoalsTracker/GoalsTracker"
 import { SearchFilter } from "@/components/Dashboard/SearchFilter"
 import { StatsOverview } from "@/components/Dashboard/StatsOverview"
 import { UpcomingDeadlines } from "@/components/Calendar/UpcomingDeadlines"
+import { QuickNotes } from "@/components/QuickNotes/QuickNotes"
 import { ExportButton } from "@/components/Export/ExportButton"
 import { Button } from "@/components/ui/button"
-import { BarChart3 } from "lucide-react"
+import { BarChart3, Settings } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { useKeyboardShortcuts } from "@/components/KeyboardShortcuts/useKeyboardShortcuts"
@@ -94,6 +95,11 @@ export default function Home() {
                     Analytics
                   </Button>
                 </Link>
+                <Link href="/settings">
+                  <Button variant="outline" size="sm">
+                    <Settings className="w-4 h-4" />
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
@@ -162,6 +168,7 @@ export default function Home() {
               <div className="space-y-6">
                 <GoalsTracker />
                 <UpcomingDeadlines />
+                <QuickNotes />
                 <ConversationFeed />
               </div>
             </div>
