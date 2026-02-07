@@ -1,0 +1,48 @@
+{
+  "goals": [
+    {
+      "id": "goal-root",
+      "title": "Build a Life I Own",
+      "category": "personal",
+      "horizon": "long",
+      "why": "Sustain freedom, energy, and focus across work and life.",
+      "metric": "Weekly energy score >= 8/10",
+      "deadline": "",
+      "progress": 35,
+      "parentId": null
+    },
+    {
+      "id": "goal-work-growth",
+      "title": "Grow Mission Control",
+      "category": "work",
+      "horizon": "1y",
+      "why": "Make the dashboard the default control plane for my projects.",
+      "metric": "Daily active use, 5+ projects tracked",
+      "deadline": "",
+      "progress": 50,
+      "parentId": "goal-root"
+    },
+    {
+      "id": "goal-health",
+      "title": "Health & Energy",
+      "category": "personal",
+      "horizon": "6m",
+      "why": "High energy unlocks everything else.",
+      "metric": "5 workouts/week + 7.5h sleep avg",
+      "deadline": "",
+      "progress": 40,
+      "parentId": "goal-root"
+    },
+    {
+      "id": "goal-focus",
+      "title": "Deep Work Rhythm",
+      "category": "work",
+      "horizon": "2w",
+      "why": "Ship core features consistently.",
+      "metric": "3 deep work blocks/day",
+      "deadline": "",
+      "progress": 60,
+      "parentId": "goal-work-growth"
+    }
+  ]
+}

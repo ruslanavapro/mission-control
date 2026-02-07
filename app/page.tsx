@@ -104,6 +104,11 @@ export default function Home() {
                 </Button>
                 <ThemeToggle />
                 <ExportButton projects={projects} />
+                <Link href="/ai-employees">
+                  <Button variant="outline" size="sm">
+                    AI Employees
+                  </Button>
+                </Link>
                 <Link href="/analytics">
                   <Button variant="outline" size="sm">
                     <BarChart3 className="w-4 h-4 mr-2" />

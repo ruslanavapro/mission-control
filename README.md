@@ -23,6 +23,27 @@ See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions.
 
 ---
 
+## Goals Dashboard
+
+Run locally:
+
+```bash
+npm install
+npm run dev
+```
+
+Goal data is stored at `/Users/claw/clawd/shared/ava-collaboration/goal-tree/goal-tree.json` when writable. If that path is unavailable at runtime, the app falls back to `data/goal-tree.json`.
+
+---
+
+## AI Employees Dashboard
+
+Dashboard page: `http://localhost:3000/ai-employees`
+
+AI Employees data is stored at `/Users/claw/clawd/shared/projects/ai-employees.json` when writable. If that path is unavailable at runtime, the app falls back to `data/ai-employees.json`.
+
+---
+
 ## ✨ Features
 
 ### ✅ Currently Implemented
@@ -119,9 +140,13 @@ See [DEPLOY.md](DEPLOY.md) for detailed deployment guide.
 
 ### Environment Variables
 
+Basic Auth is enforced for all routes. Set `DASH_AUTH_USER` and `DASH_AUTH_PASS` for any non-local access; if either is missing, only `127.0.0.1`/`::1` can access the app.
+
 ```env
 # Required
 AVABASE_API_URL=https://ava-2-brain-production.up.railway.app
+DASH_AUTH_USER=your_username
+DASH_AUTH_PASS=your_password
 
 # Optional (for full functionality)
 CLAWDBOT_API_URL=http://localhost:18800
