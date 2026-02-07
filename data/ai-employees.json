@@ -1,0 +1,59 @@
+{
+  "status": "planned",
+  "createdAt": "2026-02-07T00:00:00.000Z",
+  "updatedAt": "2026-02-07T00:00:00.000Z",
+  "overview": {
+    "summary": "Validate AI Employees landing page and offer positioning.",
+    "problem": "Teams need reliable AI support without hiring overhead.",
+    "valueProp": "Always-on AI employees trained for repeatable workflows.",
+    "primaryAudience": "Ops leaders and founders at 20-500 employee companies."
+  },
+  "icpSegments": [
+    "Operations leaders at SaaS companies (20-500 employees)",
+    "Founder-led agencies needing scalable delivery",
+    "Customer support teams with repetitive workflows"
+  ],
+  "languages": ["English", "Spanish", "French"],
+  "domainShortlist": [
+    "aiemployees.com",
+    "hireaiemployees.com",
+    "ai-staffing.com"
+  ],
+  "siteIA": [
+    "Hero",
+    "Problem",
+    "How it works",
+    "Use cases",
+    "Pricing",
+    "FAQ",
+    "CTA"
+  ],
+  "packagesPricing": [
+    "Starter: 1 AI employee - $499/mo",
+    "Growth: 3 AI employees - $1,199/mo",
+    "Scale: Custom workflows + SLA"
+  ],
+  "trafficChannels": [
+    "LinkedIn outbound",
+    "Founder newsletter",
+    "SEO: AI employee workflows",
+    "Partner referrals"
+  ],
+  "kpisResults": [
+    "Landing conversion rate >= 3%",
+    "50 qualified waitlist signups",
+    "CPL under $40",
+    "10 demo requests"
+  ],
+  "backlog": [
+    "Draft landing copy options",
+    "Collect 3 customer quotes",
+    "Finalize pricing anchors",
+    "Launch first outbound sequence"
+  ],
+  "nextActions": [
+    { "id": "action-1", "text": "Review landing headline variants", "done": false },
+    { "id": "action-2", "text": "Confirm domain shortlist", "done": false },
+    { "id": "action-3", "text": "Set up conversion tracking", "done": false }
+  ]
+}

@@ -3,7 +3,14 @@ import { constants as fsConstants } from "fs"
 import path from "path"
 import { AiEmployeesData } from "./types"
 
-const preferredDataFile = "/Users/claw/clawd/shared/projects/ai-employees.json"
+const envAiEmployeesFile = process.env.MISSION_CONTROL_AI_EMPLOYEES_FILE
+const envDataDir = process.env.MISSION_CONTROL_DATA_DIR
+
+const preferredDataFile =
+  envAiEmployeesFile ??
+  (envDataDir ? path.join(envDataDir, "ai-employees.json") : undefined) ??
+  "/Users/claw/clawd/shared/projects/ai-employees.json"
+
 const fallbackDataFile = path.join(process.cwd(), "data", "ai-employees.json")
 
 const now = new Date().toISOString()
@@ -84,13 +91,22 @@ async function ensureFile(filePath: string) {
 }
 
 async function resolveWritablePath() {
-  try {
-    await ensureFile(preferredDataFile)
-    return { dataFile: preferredDataFile, usedFallback: false }
-  } catch (error) {
-    await ensureFile(fallbackDataFile)
-    return { dataFile: fallbackDataFile, usedFallback: true }
+  const canUsePreferred =
+    typeof preferredDataFile === "string" &&
+    preferredDataFile.length > 0 &&
+    !(process.platform !== "darwin" && preferredDataFile.startsWith("/Users/"))
+
+  if (canUsePreferred) {
+    try {
+      await ensureFile(preferredDataFile)
+      return { dataFile: preferredDataFile, usedFallback: false }
+    } catch {
+      // fall through to fallback
+    }
   }
+
+  await ensureFile(fallbackDataFile)
+  return { dataFile: fallbackDataFile, usedFallback: true }
 }
 
 export async function readAiEmployeesData(): Promise<{

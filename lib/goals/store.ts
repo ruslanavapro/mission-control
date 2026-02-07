@@ -3,8 +3,14 @@ import { constants as fsConstants } from "fs"
 import path from "path"
 import { GoalData, GoalNode } from "./types"
 
+const envGoalsFile = process.env.MISSION_CONTROL_GOALS_FILE
+const envDataDir = process.env.MISSION_CONTROL_DATA_DIR
+
 const preferredDataFile =
+  envGoalsFile ??
+  (envDataDir ? path.join(envDataDir, "goal-tree.json") : undefined) ??
   "/Users/claw/clawd/shared/ava-collaboration/goal-tree/goal-tree.json"
+
 const fallbackDataFile = path.join(process.cwd(), "data", "goal-tree.json")
 
 const defaultData: GoalData = {
@@ -72,13 +78,24 @@ async function ensureFile(filePath: string) {
 }
 
 async function resolveWritablePath() {
-  try {
-    await ensureFile(preferredDataFile)
-    return { dataFile: preferredDataFile, usedFallback: false }
-  } catch (error) {
-    await ensureFile(fallbackDataFile)
-    return { dataFile: fallbackDataFile, usedFallback: true }
+  const canUsePreferred =
+    typeof preferredDataFile === "string" &&
+    preferredDataFile.length > 0 &&
+    // Avoid accidentally creating macOS-specific absolute paths inside Linux containers.
+    // On Railway (Linux), we should rely on MISSION_CONTROL_DATA_DIR/.. or fallback.
+    !(process.platform !== "darwin" && preferredDataFile.startsWith("/Users/"))
+
+  if (canUsePreferred) {
+    try {
+      await ensureFile(preferredDataFile)
+      return { dataFile: preferredDataFile, usedFallback: false }
+    } catch {
+      // fall through to fallback
+    }
   }
+
+  await ensureFile(fallbackDataFile)
+  return { dataFile: fallbackDataFile, usedFallback: true }
 }
 
 export async function readGoalData(): Promise<{

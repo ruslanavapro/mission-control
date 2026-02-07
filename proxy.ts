@@ -4,6 +4,10 @@ import type { NextRequest } from 'next/server'
 const BASIC_PREFIX = 'Basic '
 const REALM_HEADER = 'Basic realm="Mission Control"'
 
+export const config = {
+  matcher: ['/:path*'],
+}
+
 const isTruthy = (value: string | undefined): value is string =>
   typeof value === 'string' && value.length > 0
 
@@ -60,7 +64,7 @@ const unauthorizedResponse = () =>
     },
   })
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const authUser = process.env.DASH_AUTH_USER
   const authPass = process.env.DASH_AUTH_PASS
   const hasCredentials = isTruthy(authUser) && isTruthy(authPass)
