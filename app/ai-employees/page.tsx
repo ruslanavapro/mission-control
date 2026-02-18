@@ -1,591 +1,195 @@
-"use client"
+'use client'
 
-import { useCallback, useEffect, useMemo, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Plus, RefreshCw, Trash2 } from "lucide-react"
-import type {
-  AiEmployeesData,
-  AiEmployeesStatus,
-  NextAction,
-} from "@/lib/ai-employees/types"
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
+import { toast } from 'sonner'
+import { ArrowLeft, RefreshCw, Save } from 'lucide-react'
 
-const statusOptions: { value: AiEmployeesStatus; label: string }[] = [
-  { value: "planned", label: "Planned" },
-  { value: "building", label: "Building" },
-  { value: "launched", label: "Launched" },
-  { value: "measuring", label: "Measuring" },
-]
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Textarea } from '@/components/ui/textarea'
 
-type FormState = {
-  status: AiEmployeesStatus
-  createdAt: string
-  updatedAt: string
-  overviewSummary: string
-  overviewProblem: string
-  overviewValueProp: string
-  overviewPrimaryAudience: string
-  icpSegments: string
-  languages: string
-  domainShortlist: string
-  siteIA: string
-  packagesPricing: string
-  trafficChannels: string
-  kpisResults: string
-  backlog: string
-  nextActions: NextAction[]
-}
-
-const emptyForm: FormState = {
-  status: "planned",
-  createdAt: "",
-  updatedAt: "",
-  overviewSummary: "",
-  overviewProblem: "",
-  overviewValueProp: "",
-  overviewPrimaryAudience: "",
-  icpSegments: "",
-  languages: "",
-  domainShortlist: "",
-  siteIA: "",
-  packagesPricing: "",
-  trafficChannels: "",
-  kpisResults: "",
-  backlog: "",
-  nextActions: [],
-}
-
-const listToText = (list: string[] | undefined) =>
-  list && list.length > 0 ? list.join("\n") : ""
-
-const textToList = (value: string) =>
-  value
-    .split("\n")
-    .map((item) => item.trim())
-    .filter(Boolean)
-
-const formatTimestamp = (value: string) => {
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return "—"
-  return date.toLocaleString("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  })
-}
-
-const dataToForm = (data: AiEmployeesData): FormState => ({
-  status: data.status,
-  createdAt: data.createdAt ?? "",
-  updatedAt: data.updatedAt ?? "",
-  overviewSummary: data.overview?.summary ?? "",
-  overviewProblem: data.overview?.problem ?? "",
-  overviewValueProp: data.overview?.valueProp ?? "",
-  overviewPrimaryAudience: data.overview?.primaryAudience ?? "",
-  icpSegments: listToText(data.icpSegments),
-  languages: listToText(data.languages),
-  domainShortlist: listToText(data.domainShortlist),
-  siteIA: listToText(data.siteIA),
-  packagesPricing: listToText(data.packagesPricing),
-  trafficChannels: listToText(data.trafficChannels),
-  kpisResults: listToText(data.kpisResults),
-  backlog: listToText(data.backlog),
-  nextActions: data.nextActions ?? [],
-})
-
-const formToPayload = (form: FormState): AiEmployeesData => {
-  const now = new Date().toISOString()
-  return {
-    status: form.status,
-    createdAt: form.createdAt || now,
-    updatedAt: now,
-    overview: {
-      summary: form.overviewSummary.trim(),
-      problem: form.overviewProblem.trim(),
-      valueProp: form.overviewValueProp.trim(),
-      primaryAudience: form.overviewPrimaryAudience.trim(),
-    },
-    icpSegments: textToList(form.icpSegments),
-    languages: textToList(form.languages),
-    domainShortlist: textToList(form.domainShortlist),
-    siteIA: textToList(form.siteIA),
-    packagesPricing: textToList(form.packagesPricing),
-    trafficChannels: textToList(form.trafficChannels),
-    kpisResults: textToList(form.kpisResults),
-    backlog: textToList(form.backlog),
-    nextActions: form.nextActions.filter((action) => action.text.trim().length > 0),
-  }
+type AiEmployeesApiResponse = {
+  data: unknown
+  dataFile: string
+  usedFallback?: boolean
+  readOnly?: boolean
+  warning?: string
 }
 
 export default function AiEmployeesPage() {
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [dataFile, setDataFile] = useState<string | null>(null)
-  const [usedFallback, setUsedFallback] = useState(false)
-  const [warning, setWarning] = useState<string | null>(null)
 
-  const completedActions = useMemo(
-    () => form.nextActions.filter((action) => action.done).length,
-    [form.nextActions]
-  )
+  const [dataFile, setDataFile] = useState<string>('')
+  const [warning, setWarning] = useState<string>('')
+  const [readOnly, setReadOnly] = useState(false)
+  const [lastLoadedAt, setLastLoadedAt] = useState<string>('')
 
-  const progressValue = useMemo(() => {
-    if (form.nextActions.length === 0) return 0
-    return Math.round((completedActions / form.nextActions.length) * 100)
-  }, [completedActions, form.nextActions.length])
+  const [jsonText, setJsonText] = useState('')
+  const [baselineJsonText, setBaselineJsonText] = useState('')
 
-  const loadData = useCallback(async () => {
+  const dirty = useMemo(() => jsonText !== baselineJsonText, [jsonText, baselineJsonText])
+
+  const load = async () => {
     setLoading(true)
-    setError(null)
     try {
-      const response = await fetch("/api/ai-employees", { cache: "no-store" })
-      const payload = await response.json()
+      const res = await fetch('/api/ai-employees', {
+        method: 'GET',
+        cache: 'no-store',
+      })
 
-      if (!response.ok) {
-        throw new Error(payload?.error || "Failed to load AI Employees data.")
+      const payload = (await res.json()) as AiEmployeesApiResponse
+
+      setDataFile(payload.dataFile || '')
+      setWarning(payload.warning || '')
+      setReadOnly(Boolean(payload.readOnly))
+
+      const pretty = JSON.stringify(payload.data ?? {}, null, 2)
+      setJsonText(pretty)
+      setBaselineJsonText(pretty)
+      setLastLoadedAt(new Date().toISOString())
+
+      if (!res.ok) {
+        toast.error('Failed to load AI Employees data')
       }
-
-      setForm(dataToForm(payload.data))
-      setDataFile(payload.dataFile ?? null)
-      setUsedFallback(Boolean(payload.usedFallback))
-      setWarning(payload.warning ?? null)
-    } catch (err: any) {
-      setError(err?.message ?? "Failed to load AI Employees data.")
+    } catch (e) {
+      console.error(e)
+      toast.error('Failed to load AI Employees data')
+      setWarning(String(e))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }
 
-  useEffect(() => {
-    loadData()
-  }, [loadData])
-
-  const handleSave = async () => {
-    setSaving(true)
-    setError(null)
+  const save = async () => {
+    let parsed: unknown
     try {
-      const payload = formToPayload(form)
-      const response = await fetch("/api/ai-employees", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: payload }),
-      })
-      const result = await response.json()
+      parsed = JSON.parse(jsonText)
+    } catch (e) {
+      toast.error('JSON is invalid — fix it before saving')
+      return
+    }
 
-      if (!response.ok) {
-        throw new Error(result?.error || "Failed to save AI Employees data.")
+    setSaving(true)
+    try {
+      const res = await fetch('/api/ai-employees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: parsed }),
+      })
+
+      const payload = (await res.json()) as AiEmployeesApiResponse
+
+      setDataFile(payload.dataFile || '')
+      setWarning(payload.warning || '')
+      setReadOnly(Boolean(payload.readOnly))
+
+      if (!res.ok) {
+        toast.error('Save failed')
+        return
       }
 
-      setForm(dataToForm(result.data))
-      setDataFile(result.dataFile ?? null)
-      setUsedFallback(Boolean(result.usedFallback))
-      setWarning(result.warning ?? null)
-    } catch (err: any) {
-      setError(err?.message ?? "Failed to save AI Employees data.")
+      const pretty = JSON.stringify(payload.data ?? parsed ?? {}, null, 2)
+      setJsonText(pretty)
+      setBaselineJsonText(pretty)
+      toast.success('Saved')
+    } catch (e) {
+      console.error(e)
+      toast.error('Save failed')
+      setWarning(String(e))
     } finally {
       setSaving(false)
     }
   }
 
-  const handleActionUpdate = (id: string, updates: Partial<NextAction>) => {
-    setForm((prev) => ({
-      ...prev,
-      nextActions: prev.nextActions.map((action) =>
-        action.id === id ? { ...action, ...updates } : action
-      ),
-    }))
-  }
-
-  const handleActionRemove = (id: string) => {
-    setForm((prev) => ({
-      ...prev,
-      nextActions: prev.nextActions.filter((action) => action.id !== id),
-    }))
-  }
-
-  const handleActionAdd = () => {
-    setForm((prev) => ({
-      ...prev,
-      nextActions: [
-        ...prev.nextActions,
-        {
-          id: `action-${Date.now()}`,
-          text: "",
-          done: false,
-        },
-      ],
-    }))
-  }
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              AI Employees Dashboard
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Control panel for landing validation and go-to-market planning.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadData}
-              disabled={loading}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-            <Button size="sm" onClick={handleSave} disabled={saving || loading}>
-              {saving ? "Saving..." : "Save"}
-            </Button>
+    <div className="min-h-screen bg-background">
+      <header className="border-b">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Link href="/">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </Link>
+            <h1 className="text-2xl font-bold">AI Employees (SSOT Editor)</h1>
+            <div className="w-32" />
           </div>
         </div>
+      </header>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Status</span>
-            <Select
-              value={form.status}
-              onValueChange={(value) =>
-                setForm((prev) => ({
-                  ...prev,
-                  status: value as AiEmployeesStatus,
-                }))
-              }
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Badge variant="outline">
-            Created: {formatTimestamp(form.createdAt)}
-          </Badge>
-          <Badge variant="outline">
-            Updated: {formatTimestamp(form.updatedAt)}
-          </Badge>
-          {usedFallback && (
-            <Badge variant="secondary">Using fallback data file</Badge>
-          )}
-        </div>
-
-        {warning && (
-          <div className="text-sm text-amber-600 border border-amber-200 rounded-lg px-3 py-2">
-            {warning}
-          </div>
-        )}
-
-        {error && (
-          <div className="text-sm text-red-600 border border-red-200 rounded-lg px-3 py-2">
-            {error}
-          </div>
-        )}
-
-        {dataFile && (
-          <div className="text-xs text-muted-foreground">
-            Data file: {dataFile}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="text-sm text-muted-foreground">Loading data...</div>
-        ) : (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Overview</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Summary</label>
-                  <Textarea
-                    value={form.overviewSummary}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        overviewSummary: event.target.value,
-                      }))
-                    }
-                    placeholder="One-paragraph summary of the project"
-                  />
+      <div className="container mx-auto px-6 py-8 max-w-4xl space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <CardTitle>Data Source</CardTitle>
+                <CardDescription>
+                  Edits are saved to the shared SSOT JSON file via <code>/api/ai-employees</code>.
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={load} disabled={loading || saving}>
+                  <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+                <Button onClick={save} disabled={readOnly || saving || loading || !dirty}>
+                  <Save className={`w-4 h-4 mr-2 ${saving ? 'animate-pulse' : ''}`} />
+                  {readOnly ? 'Read-only' : saving ? 'Saving…' : dirty ? 'Save' : 'Saved'}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm">
+              <span className="text-muted-foreground">File:</span>{' '}
+              <code className="text-xs break-all">{dataFile || '—'}</code>
+            </div>
+            <div className="text-sm">
+              <span className="text-muted-foreground">Last loaded:</span>{' '}
+              <code className="text-xs">{lastLoadedAt ? new Date(lastLoadedAt).toLocaleString() : '—'}</code>
+            </div>
+            {readOnly ? (
+              <div className="rounded-md border border-blue-500/30 bg-blue-500/10 p-3 text-sm">
+                <div className="font-medium mb-1">Read-only mode</div>
+                <div className="text-xs text-muted-foreground">
+                  Saving is disabled in this environment. To enable edits on Vercel, back this endpoint with a KV/DB.
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Problem</label>
-                  <Textarea
-                    value={form.overviewProblem}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        overviewProblem: event.target.value,
-                      }))
-                    }
-                    placeholder="What pain are we solving?"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Value Proposition</label>
-                  <Textarea
-                    value={form.overviewValueProp}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        overviewValueProp: event.target.value,
-                      }))
-                    }
-                    placeholder="Why this wins"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Primary Audience</label>
-                  <Input
-                    value={form.overviewPrimaryAudience}
-                    onChange={(event) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        overviewPrimaryAudience: event.target.value,
-                      }))
-                    }
-                    placeholder="Who is this for?"
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            ) : null}
+            {warning ? (
+              <div className="rounded-md border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm">
+                <div className="font-medium mb-1">Warning</div>
+                <pre className="whitespace-pre-wrap text-xs">{warning}</pre>
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>ICP Segments</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea
-                  value={form.icpSegments}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      icpSegments: event.target.value,
-                    }))
-                  }
-                  placeholder="One segment per line"
-                  rows={6}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Languages</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea
-                  value={form.languages}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      languages: event.target.value,
-                    }))
-                  }
-                  placeholder="One language per line"
-                  rows={6}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Domain Shortlist</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea
-                  value={form.domainShortlist}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      domainShortlist: event.target.value,
-                    }))
-                  }
-                  placeholder="One domain per line"
-                  rows={6}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Site IA</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea
-                  value={form.siteIA}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      siteIA: event.target.value,
-                    }))
-                  }
-                  placeholder="One section per line"
-                  rows={6}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Packages / Pricing</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea
-                  value={form.packagesPricing}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      packagesPricing: event.target.value,
-                    }))
-                  }
-                  placeholder="One package per line"
-                  rows={6}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Traffic Channels</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea
-                  value={form.trafficChannels}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      trafficChannels: event.target.value,
-                    }))
-                  }
-                  placeholder="One channel per line"
-                  rows={6}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>KPIs / Results</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea
-                  value={form.kpisResults}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      kpisResults: event.target.value,
-                    }))
-                  }
-                  placeholder="One KPI per line"
-                  rows={6}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Backlog</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Textarea
-                  value={form.backlog}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      backlog: event.target.value,
-                    }))
-                  }
-                  placeholder="One item per line"
-                  rows={6}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle>Next Actions</CardTitle>
-                  <Button size="sm" variant="outline" onClick={handleActionAdd}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add
-                  </Button>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>
-                    {completedActions}/{form.nextActions.length} complete
-                  </span>
-                  <span>{progressValue}%</span>
-                </div>
-                <Progress value={progressValue} className="h-1.5" />
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {form.nextActions.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">
-                    No next actions yet.
-                  </div>
-                ) : (
-                  form.nextActions.map((action) => (
-                    <div key={action.id} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4"
-                        checked={action.done}
-                        onChange={(event) =>
-                          handleActionUpdate(action.id, {
-                            done: event.target.checked,
-                          })
-                        }
-                      />
-                      <Input
-                        value={action.text}
-                        onChange={(event) =>
-                          handleActionUpdate(action.id, {
-                            text: event.target.value,
-                          })
-                        }
-                        placeholder="Action detail"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleActionRemove(action.id)}
-                        aria-label="Remove action"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        <Card>
+          <CardHeader>
+            <CardTitle>JSON</CardTitle>
+            <CardDescription>
+              Edit the JSON directly. Make sure it stays valid JSON before saving.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={jsonText}
+              onChange={(e) => setJsonText(e.target.value)}
+              className="font-mono text-xs min-h-[520px]"
+              spellCheck={false}
+            />
+          </CardContent>
+        </Card>
       </div>
-    </main>
+    </div>
   )
 }
