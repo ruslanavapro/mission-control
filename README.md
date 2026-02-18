@@ -21,6 +21,19 @@ Open **http://localhost:3000** → Dashboard ready! 🎉
 
 See [QUICKSTART.md](QUICKSTART.md) for detailed setup instructions.
 
+### AI Employees SSOT Editor
+
+This repo includes a small internal editor for the **AI Employees** project SSOT JSON.
+
+- Open: **http://localhost:3000/ai-employees**
+- API: **GET/POST http://localhost:3000/api/ai-employees**
+
+By default it reads/writes to `../../shared/projects/ai-employees.json` (relative to this repo). You can override the location with:
+
+```bash
+AI_EMPLOYEES_DATA_FILE=/absolute/path/to/ai-employees.json npm run dev
+```
+
 ---
 
 ## Goals Dashboard

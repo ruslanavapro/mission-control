@@ -1,133 +1,213 @@
-import { NextResponse } from "next/server"
-import { readAiEmployeesData, writeAiEmployeesData } from "@/lib/ai-employees/store"
-import {
-  AiEmployeesData,
-  AiEmployeesOverview,
-  AiEmployeesStatus,
-  NextAction,
-} from "@/lib/ai-employees/types"
+import { NextRequest, NextResponse } from 'next/server'
+import path from 'path'
+import { promises as fs } from 'fs'
+import crypto from 'crypto'
 
-export const dynamic = "force-dynamic"
-export const runtime = "nodejs"
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-const statuses: AiEmployeesStatus[] = [
-  "planned",
-  "building",
-  "launched",
-  "measuring",
-]
-
-function sanitizeString(value: any) {
-  if (typeof value === "string") return value.trim()
-  return ""
+type AiEmployeesApiResponse = {
+  data: unknown
+  dataFile: string
+  usedFallback?: boolean
+  readOnly?: boolean
+  warning?: string
 }
 
-function sanitizeList(value: any): string[] {
-  if (Array.isArray(value)) {
-    return value.map((item) => String(item).trim()).filter(Boolean)
+const DEFAULT_RELATIVE_FILE = path.resolve(
+  process.cwd(),
+  '../../shared/projects/ai-employees.json'
+)
+const DEFAULT_ABSOLUTE_FILE = '/Users/claw/clawd/shared/projects/ai-employees.json'
+
+const PUBLIC_READONLY_FILE = path.join(process.cwd(), 'public', 'ai-employees.json')
+
+const IS_VERCEL = Boolean(process.env.VERCEL)
+
+async function fileExists(filePath: string) {
+  try {
+    await fs.access(filePath)
+    return true
+  } catch {
+    return false
   }
-  if (typeof value === "string") {
-    return value
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean)
-  }
-  return []
 }
 
-function sanitizeOverview(overview: any): AiEmployeesOverview {
+async function resolveDataFile(): Promise<{
+  dataFile: string
+  usedFallback?: boolean
+  warning?: string
+}> {
+  const envFile = process.env.AI_EMPLOYEES_DATA_FILE
+
+  if (envFile) {
+    return { dataFile: envFile }
+  }
+
+  if (await fileExists(DEFAULT_RELATIVE_FILE)) {
+    return { dataFile: DEFAULT_RELATIVE_FILE }
+  }
+
+  if (await fileExists(DEFAULT_ABSOLUTE_FILE)) {
+    return {
+      dataFile: DEFAULT_ABSOLUTE_FILE,
+      usedFallback: true,
+      warning:
+        'Using fallback absolute path for ai-employees.json (set AI_EMPLOYEES_DATA_FILE to override).',
+    }
+  }
+
+  // Default to the relative path even if it doesn't exist yet (will be created on POST)
   return {
-    summary: sanitizeString(overview?.summary),
-    problem: sanitizeString(overview?.problem),
-    valueProp: sanitizeString(overview?.valueProp),
-    primaryAudience: sanitizeString(overview?.primaryAudience),
+    dataFile: DEFAULT_RELATIVE_FILE,
+    usedFallback: true,
+    warning:
+      'ai-employees.json not found. Will use default path (and create on save). Set AI_EMPLOYEES_DATA_FILE to override.',
   }
 }
 
-function sanitizeNextActions(value: any): NextAction[] {
-  if (!Array.isArray(value)) return []
-  return value
-    .map((action, index) => ({
-      id:
-        typeof action?.id === "string" && action.id.trim().length > 0
-          ? action.id
-          : `action-${index}`,
-      text: sanitizeString(action?.text),
-      done: Boolean(action?.done),
-    }))
-    .filter((action) => action.text.length > 0)
+async function readJson(filePath: string): Promise<{ data?: unknown; warning?: string }> {
+  try {
+    const raw = await fs.readFile(filePath, 'utf8')
+    return { data: JSON.parse(raw) }
+  } catch (err) {
+    return {
+      data: {},
+      warning: `Failed to read or parse ${filePath}: ${err instanceof Error ? err.message : String(err)}`,
+    }
+  }
 }
 
-function sanitizeAiEmployeesData(payload: any): AiEmployeesData {
-  const status: AiEmployeesStatus = statuses.includes(payload?.status)
-    ? payload.status
-    : "planned"
-  const now = new Date().toISOString()
-  const createdAt =
-    typeof payload?.createdAt === "string" && payload.createdAt.trim().length > 0
-      ? payload.createdAt
-      : now
+async function atomicWriteFile(filePath: string, contents: string) {
+  const dir = path.dirname(filePath)
+  await fs.mkdir(dir, { recursive: true })
 
-  return {
-    status,
-    createdAt,
-    updatedAt: now,
-    overview: sanitizeOverview(payload?.overview),
-    icpSegments: sanitizeList(payload?.icpSegments),
-    languages: sanitizeList(payload?.languages),
-    domainShortlist: sanitizeList(payload?.domainShortlist),
-    siteIA: sanitizeList(payload?.siteIA),
-    packagesPricing: sanitizeList(payload?.packagesPricing),
-    trafficChannels: sanitizeList(payload?.trafficChannels),
-    kpisResults: sanitizeList(payload?.kpisResults),
-    backlog: sanitizeList(payload?.backlog),
-    nextActions: sanitizeNextActions(payload?.nextActions),
-  }
+  const tmpFile = path.join(
+    dir,
+    `.${path.basename(filePath)}.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`
+  )
+
+  await fs.writeFile(tmpFile, contents, 'utf8')
+  await fs.rename(tmpFile, filePath)
+}
+
+function jsonNoStore(payload: AiEmployeesApiResponse, init?: ResponseInit) {
+  return NextResponse.json(payload, {
+    ...init,
+    headers: {
+      ...(init?.headers || {}),
+      'Cache-Control': 'no-store, max-age=0',
+    },
+  })
 }
 
 export async function GET() {
-  try {
-    const result = await readAiEmployeesData()
-    return NextResponse.json({
-      data: result.data,
-      dataFile: result.dataFile,
-      usedFallback: result.usedFallback,
-      warning: result.warning,
-    })
-  } catch (error) {
-    console.error("Error reading AI Employees data:", error)
-    return NextResponse.json(
-      { error: "Failed to load AI Employees data." },
-      { status: 500 }
-    )
-  }
-}
+  if (IS_VERCEL) {
+    const dataFile = PUBLIC_READONLY_FILE
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    const payload = body?.data ?? body
-
-    if (!payload || typeof payload !== "object") {
-      return NextResponse.json(
-        { error: "Expected AI Employees data in request body." },
-        { status: 400 }
-      )
+    if (!(await fileExists(dataFile))) {
+      return jsonNoStore({
+        data: {},
+        dataFile,
+        usedFallback: true,
+        readOnly: true,
+        warning:
+          'Running on Vercel: ai-employees data is read-only and should be provided via public/ai-employees.json. File is missing.',
+      })
     }
 
-    const sanitized = sanitizeAiEmployeesData(payload)
-    const result = await writeAiEmployeesData(sanitized)
+    const { data, warning: readWarning } = await readJson(dataFile)
 
-    return NextResponse.json({
-      ok: true,
-      data: sanitized,
-      dataFile: result.dataFile,
-      usedFallback: result.usedFallback,
+    return jsonNoStore({
+      data,
+      dataFile,
+      usedFallback: Boolean(readWarning) || undefined,
+      readOnly: true,
+      warning: readWarning,
     })
+  }
+
+  const { dataFile, usedFallback, warning: resolveWarning } = await resolveDataFile()
+  const { data, warning: readWarning } = await readJson(dataFile)
+
+  const warning = [resolveWarning, readWarning].filter(Boolean).join('\n') || undefined
+
+  return jsonNoStore({
+    data,
+    dataFile,
+    usedFallback: usedFallback || Boolean(readWarning) || undefined,
+    warning,
+  })
+}
+
+export async function POST(request: NextRequest) {
+  if (IS_VERCEL) {
+    return jsonNoStore(
+      {
+        data: null,
+        dataFile: PUBLIC_READONLY_FILE,
+        usedFallback: true,
+        readOnly: true,
+        warning:
+          'Running on Vercel: saving AI Employees data is disabled (filesystem is read-only). Use a KV/DB (e.g. Vercel KV/Postgres) and update this endpoint to persist changes.',
+      },
+      { status: 501 }
+    )
+  }
+
+  const { dataFile, usedFallback, warning: resolveWarning } = await resolveDataFile()
+
+  let body: { data?: unknown }
+  try {
+    body = await request.json()
   } catch (error) {
-    console.error("Error writing AI Employees data:", error)
-    return NextResponse.json(
-      { error: "Failed to save AI Employees data." },
+    return jsonNoStore(
+      {
+        data: null,
+        dataFile,
+        usedFallback,
+        warning: `Invalid JSON body: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 400 }
+    )
+  }
+
+  if (typeof body !== 'object' || body === null || !('data' in body)) {
+    return jsonNoStore(
+      {
+        data: null,
+        dataFile,
+        usedFallback,
+        warning: 'Missing required field: { data }',
+      },
+      { status: 400 }
+    )
+  }
+
+  try {
+    const json = JSON.stringify(body.data, null, 2) + '\n'
+    await atomicWriteFile(dataFile, json)
+
+    const warning = resolveWarning
+
+    return jsonNoStore(
+      {
+        data: body.data,
+        dataFile,
+        usedFallback,
+        warning,
+      },
+      { status: 200 }
+    )
+  } catch (error) {
+    console.error('Error writing ai-employees.json:', error)
+    return jsonNoStore(
+      {
+        data: body.data,
+        dataFile,
+        usedFallback,
+        warning: `Failed to write ${dataFile}: ${error instanceof Error ? error.message : String(error)}`,
+      },
       { status: 500 }
     )
   }
